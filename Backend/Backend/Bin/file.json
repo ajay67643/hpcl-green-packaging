@@ -1,0 +1,192 @@
+[
+  {
+    "name": "Aluminium Panel",
+    "InputParameters": {
+      "RawMaterials": [
+        {
+          "name": "Aluminium (primary)",
+          "amount": 10,
+          "unit": "kg"
+        },
+        {
+          "name": "Coating (polymer)",
+          "amount": 0.5,
+          "unit": "kg"
+        }
+      ],
+      "ProcessEnergy": [
+        {
+          "process": "Sheet metal forming",
+          "energy_type": "Electricity (grid mix)",
+          "amount": 12,
+          "unit": "kWh"
+        }
+      ],
+      "Transport": [
+        {
+          "mode": "Truck (Euro 6)",
+          "distance": 500,
+          "unit": "km"
+        }
+      ]
+    },
+    "OutputParameters": {
+      "EmissionsToAir": [
+        {
+          "substance": "CO2",
+          "amount": 30,
+          "unit": "kg"
+        },
+        {
+          "substance": "SO2",
+          "amount": 0.05,
+          "unit": "kg"
+        },
+        {
+          "substance": "NOx",
+          "amount": 0.08,
+          "unit": "kg"
+        }
+      ],
+      "EmissionsToWater": [
+        {
+          "substance": "COD",
+          "amount": 0.02,
+          "unit": "kg"
+        },
+        {
+          "substance": "Nitrates",
+          "amount": 0.01,
+          "unit": "kg"
+        }
+      ],
+      "EmissionsToSoil": [
+        {
+          "substance": "Heavy metals (trace)",
+          "amount": 0.001,
+          "unit": "kg"
+        }
+      ],
+      "FinalWasteFlow": [
+        {
+          "waste": "Slag/dross",
+          "amount": 0.2,
+          "unit": "kg"
+        },
+        {
+          "waste": "Packaging waste",
+          "amount": 0.5,
+          "unit": "kg"
+        }
+      ]
+    },
+    "UseAndEndOfLife": {
+      "UsePhase": {
+        "lifespan": 30,
+        "unit": "years",
+        "energy_per_year": "N/A"
+      },
+      "EndOfLife": {
+        "Recycling": 90,
+        "Reuse": 5,
+        "Landfill": 5,
+        "unit": "%"
+      }
+    }
+  },
+  {
+    "name": "Hinge and Handle",
+    "InputParameters": {
+      "RawMaterials": [
+        {
+          "name": "Aluminium (recycled/downgraded)",
+          "amount": 2,
+          "unit": "kg"
+        },
+        {
+          "name": "Steel (fasteners/small parts)",
+          "amount": 0.3,
+          "unit": "kg"
+        },
+        {
+          "name": "Coating (paint/powder)",
+          "amount": 0.1,
+          "unit": "kg"
+        }
+      ],
+      "ProcessEnergy": [
+        {
+          "process": "Casting and machining",
+          "energy_type": "Electricity (grid mix)",
+          "amount": 4,
+          "unit": "kWh"
+        }
+      ],
+      "Transport": [
+        {
+          "mode": "Truck (Euro 6)",
+          "distance": 300,
+          "unit": "km"
+        }
+      ]
+    },
+    "OutputParameters": {
+      "EmissionsToAir": [
+        {
+          "substance": "CO2",
+          "amount": 6,
+          "unit": "kg"
+        },
+        {
+          "substance": "SO2",
+          "amount": 0.01,
+          "unit": "kg"
+        },
+        {
+          "substance": "NOx",
+          "amount": 0.02,
+          "unit": "kg"
+        }
+      ],
+      "EmissionsToWater": [
+        {
+          "substance": "COD",
+          "amount": 0.005,
+          "unit": "kg"
+        }
+      ],
+      "EmissionsToSoil": [
+        {
+          "substance": "Heavy metals (trace)",
+          "amount": 0.0003,
+          "unit": "kg"
+        }
+      ],
+      "FinalWasteFlow": [
+        {
+          "waste": "Scrap from machining",
+          "amount": 0.1,
+          "unit": "kg"
+        },
+        {
+          "waste": "Packaging waste",
+          "amount": 0.1,
+          "unit": "kg"
+        }
+      ]
+    },
+    "UseAndEndOfLife": {
+      "UsePhase": {
+        "lifespan": 30,
+        "unit": "years",
+        "energy_per_year": "N/A"
+      },
+      "EndOfLife": {
+        "Recycling": 85,
+        "Reuse": 5,
+        "Landfill": 10,
+        "unit": "%"
+      }
+    }
+  }
+]

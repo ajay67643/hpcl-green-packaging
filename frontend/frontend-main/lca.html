@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Life Cycle Assessment Platform (Simulation)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-button.active {
+            border-bottom-color: #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+        .tab-button:disabled {
+            color: #9ca3af;
+            border-bottom-color: transparent;
+            cursor: not-allowed;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        .loader-sm {
+            width: 20px;
+            height: 20px;
+            border-width: 3px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .part-item.active {
+            background-color: #dbeafe;
+            border-color: #60a5fa;
+        }
+        .hidden {
+            display: none;
+        }
+        .toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            transform: translateX(120%);
+            transition: transform 0.3s ease-out;
+            z-index: 100;
+        }
+        .toast.show {
+             transform: translateX(0);
+        }
+        /* Styles for the new analysis section */
+        .chart-container {
+            position: relative;
+            height: 50vh;
+            width: 100%;
+        }
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        /* Circular Economy Diagram Styles */
+        .ce-stage {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .ce-stage:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .flow-arrow {
+            transition: stroke-width 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+        /* Custom styles for CE input range */
+        #circular-economy-diagram input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        #circular-economy-diagram input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8 pb-4 border-b border-gray-200">
+            <div class="flex items-center gap-4">
+                <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">AI-Powered Life Cycle Assessment</h1>
+                    <p class="text-sm text-gray-500">Ministry of Mines</p>
+                </div>
+            </div>
+             <img src="Resource/logo.jpg" alt="Ministry of Mines Logo" class="h-16">
+        </header>
+
+        <!-- Simulation Disclaimer -->
+        <div class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-md">
+            <p class="font-bold">Demonstration Mode</p>
+            <p class="text-sm">This is a simulated version of the application. All API calls are mocked with sample data. For full functionality and live AI interaction, please download the complete project from GitHub.</p>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav id="tabs-nav" class="flex -mb-px space-x-6" aria-label="Tabs">
+                <button type="button" id="tab-btn-projectSetup" onclick="changeTab('projectSetup')" class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    1. Project Setup
+                </button>
+                <button type="button" id="tab-btn-assembly" onclick="changeTab('assembly')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" disabled>
+                    2. Assembly & Data Input
+                </button>
+                <button type="button" id="tab-btn-analysis" onclick="changeTab('analysis')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" disabled>
+                    3. Analysis & Visualization
+                </button>
+                <button type="button" id="tab-btn-reports" onclick="changeTab('reports')" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" disabled>
+                    4. Reports & Recommendations
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <main>
+            <!-- Project Setup (Tab 1) -->
+            <div id="projectSetup" class="tab-content active animate-fade-in">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Project Details</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="projectName" class="block text-sm font-medium text-gray-700">Final Product Name</label>
+                            <input type="text" id="projectName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="e.g., Electric Vehicle Battery Pack">
+                        </div>
+                        <div>
+                            <label for="projectGoal" class="block text-sm font-medium text-gray-700">Goal of Project</label>
+                            <input type="text" id="projectGoal" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="e.g., Assess circularity improvements">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="projectDescription" class="block text-sm font-medium text-gray-700">Project Description</label>
+                            <textarea id="projectDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Describe the final assembled product or process being assessed."></textarea>
+                        </div>
+                         <div>
+                            <label for="analysisScope" class="block text-sm font-medium text-gray-700">Analysis Scope</label>
+                            <select id="analysisScope" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option>Cradle-to-Gate</option>
+                                <option>Cradle-to-Grave</option>
+                                <option selected>Cradle-to-Cradle (Circular)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="functionalUnit" class="block text-sm font-medium text-gray-700">Functional Unit</label>
+                            <input type="text" id="functionalUnit" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" value="1 assembled product unit">
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" onclick="saveAndProceed('assembly')" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors font-semibold">Save & Proceed</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Assembly Definition & Data Input (Tab 2) -->
+            <div id="assembly" class="tab-content">
+                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <!-- Column 1: Parts List -->
+                        <div class="md:col-span-1">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-gray-800">Product Parts</h2>
+                                <button type="button" onclick="addPart()" class="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">Add Part</button>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Define all product components. You must add at least one part to proceed.</p>
+                            <div id="partsList" class="space-y-2">
+                                <p class="text-gray-500 text-center py-4">No parts added yet.</p>
+                            </div>
+                        </div>
+
+                        <!-- Column 2: LCI Form (Adjusted to fit 1 column) -->
+                        <div class="md:col-span-1">
+                             <div class="flex justify-between items-center mb-4">
+                                <h2 id="lci-title" class="text-xl font-semibold text-gray-800">Life Cycle Inventory</h2>
+                                <button type="button" id="aiButton" onclick="runAiEstimation()" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                                    <span id="aiButtonText">Estimate Missing Data</span>
+                                    <div id="aiLoader" class="loader w-5 h-5 border-t-white hidden"></div>
+                                </button>
+                            </div>
+                            <div id="lci-form-container" class="p-4 border rounded-lg bg-gray-50">
+                                <div class="grid grid-cols-1 gap-6">
+                                    <!-- INPUTS SECTION -->
+                                    <div class="space-y-4">
+                                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Input Parameters</h3>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-2"><h4 class="font-medium text-gray-700">Raw Materials</h4><button type="button" onclick="addItem('rawMaterials')" class="text-blue-600 text-sm font-semibold hover:underline">Add</button></div>
+                                            <div id="rawMaterials-list" class="space-y-2 p-2 bg-white rounded border min-h-[60px]"></div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-2"><h4 class="font-medium text-gray-700">Process & Energy</h4><button type="button" onclick="addItem('processAndEnergy')" class="text-blue-600 text-sm font-semibold hover:underline">Add</button></div>
+                                            <div id="processAndEnergy-list" class="space-y-2 p-2 bg-white rounded border min-h-[60px]"></div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-2"><h4 class="font-medium text-gray-700">Transport</h4><button type="button" onclick="addItem('transport')" class="text-blue-600 text-sm font-semibold hover:underline">Add</button></div>
+                                            <div id="transport-list" class="space-y-2 p-2 bg-white rounded border min-h-[60px]"></div>
+                                        </div>
+                                    </div>
+                                    <!-- OUTPUTS SECTION -->
+                                    <div class="space-y-4 mt-4">
+                                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">Output Parameters</h3>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-2"><h4 class="font-medium text-gray-700">Emissions to Air</h4><button type="button" onclick="addItem('airEmissions')" class="text-blue-600 text-sm font-semibold hover:underline">Add</button></div>
+                                            <div id="airEmissions-list" class="space-y-2 p-2 bg-white rounded border min-h-[60px]"></div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-2"><h4 class="font-medium text-gray-700">Emissions to Water</h4><button type="button" onclick="addItem('waterEmissions')" class="text-blue-600 text-sm font-semibold hover:underline">Add</button></div>
+                                            <div id="waterEmissions-list" class="space-y-2 p-2 bg-white rounded border min-h-[60px]"></div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-2"><h4 class="font-medium text-gray-700">Emissions to Soil</h4><button type="button" onclick="addItem('soilEmissions')" class="text-blue-600 text-sm font-semibold hover:underline">Add</button></div>
+                                            <div id="soilEmissions-list" class="space-y-2 p-2 bg-white rounded border min-h-[60px]"></div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-2"><h4 class="font-medium text-gray-700">Final Waste Flow</h4><button type="button" onclick="addItem('finalWaste')" class="text-blue-600 text-sm font-semibold hover:underline">Add</button></div>
+                                            <div id="finalWaste-list" class="space-y-2 p-2 bg-white rounded border min-h-[60px]"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mt-4 mb-2">Use & End-of-Life</h3>
+                                    <div class="space-y-4">
+                                        <div class="p-4 border rounded-md bg-white"><h3 class="text-base font-medium text-gray-700 mb-3">Use Phase</h3><div class="space-y-4"><div><label class="text-sm font-medium">Lifespan (years)</label><input type="number" id="use-lifespan" class="data-field mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm" placeholder="e.g., 20"></div><div><label class="text-sm font-medium">Energy (kWh/yr)</label><input type="number" id="use-energy" class="data-field mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm" placeholder="N/A"></div></div></div>
+                                        <div class="p-4 border rounded-md bg-white"><h3 class="text-base font-medium text-gray-700 mb-3">End-of-Life</h3><div class="space-y-4"><div><label class="text-sm font-medium">Recycling (%)</label><input type="number" id="eol-recycling" class="data-field mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm" value="90"></div><div><label class="text-sm font-medium">Reuse (%)</label><input type="number" id="eol-reuse" class="data-field mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm" value="5"></div><div><label class="text-sm font-medium">Landfill (%)</label><input type="number" id="eol-landfill" class="data-field mt-1 w-full rounded-md border-gray-300 shadow-sm sm:text-sm" value="5"></div></div></div>
+                                    </div>
+                                </div>
+                            </div> <!-- End of LCI Form Container -->
+                            <div id="lci-placeholder" class="text-center py-16 text-gray-500">
+                                <p>Please add a part to begin entering data.</p>
+                            </div>
+                             <div class="mt-6 flex justify-end">
+                                <button type="button" onclick="saveAndProceed('analysis')" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors font-semibold">Save & Proceed to Analysis</button>
+                            </div>
+                        </div>
+
+                        <!-- Column 3: AI Assistant (Assembly Tab) -->
+                        <div class="md:col-span-1 border-t md:border-t-0 md:border-l pl-4 pt-4 md:pt-0 space-y-6">
+                            <!-- AI Suggestion Section -->
+                            <div class="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
+                                <h3 class="font-bold text-sm text-yellow-800 flex items-center mb-2">
+                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                                    AI Suggestions for Part Data
+                                </h3>
+                                <div id="ai-suggestion-assembly" class="text-xs text-yellow-700 min-h-[50px]">
+                                    Suggestions for raw materials and processes will appear here after you add your first part.
+                                </div>
+                            </div>
+
+                            <!-- Chatbot Section -->
+                            <div id="lca-assistant-bot-assembly" class="bg-gray-100 p-4 rounded-lg shadow-inner flex flex-col h-[400px]">
+                                <h3 class="font-bold text-md text-gray-800 mb-3 border-b pb-2">LCA-AssistantBot</h3>
+                                <div id="chat-history-assembly" class="flex-grow overflow-y-auto space-y-3 mb-3 text-sm pr-1">
+                                    <div class="flex justify-start"><span class="bg-blue-200 text-blue-800 p-2 rounded-lg rounded-tl-none max-w-xs">Hello! I'm your LCA Assistant. Chat is disabled in this simulation. Download the full project from GitHub for live interaction.</span></div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="lca-assistant-question-assembly" class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Chat is disabled" disabled>
+                                    <button type="button" id="lca-assistant-askBtn-assembly" onclick="handleChatQuery('lca-assistant-askBtn-assembly')" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 flex-shrink-0" disabled>
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </button>
+                                </div>
+                                <div id="lca-assistant-loader-assembly" class="text-center mt-2 text-xs text-gray-500 hidden">Thinking...</div>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- Analysis & Visualization (Tab 3) -->
+            <div id="analysis" class="tab-content">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <div id="analysis-placeholder" class="text-center py-16 text-gray-500">
+                        <div id="analysis-loader" class="loader mx-auto mb-4 hidden"></div>
+                        <p id="analysis-placeholder-text">Complete the Assembly & Data Input tab to view the analysis.</p>
+                        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mt-4 max-w-md mx-auto" role="alert">
+                            <strong class="font-bold">Error:</strong>
+                            <span class="block sm:inline" id="error-text"></span>
+                        </div>
+                    </div>
+
+                    <div id="analysis-content" class="hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <!-- Column 1 & 2: Analysis Content -->
+                            <div class="md:col-span-2 space-y-6">
+                                
+                                <!-- Visualization Section -->
+                                <div id="visualization" class="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-6">
+                                    <div>
+                                        <h3 class="text-xl font-semibold text-center mb-2 text-gray-800">Impact Summary</h3>
+                                        <div id="summary-cards" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                            <!-- Summary cards will be injected here -->
+                                        </div>
+                                    </div>
+                                    <hr class="border-gray-200"/>
+                                    <!-- Filter controls -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="categorySelector" class="block text-sm font-medium text-gray-700 mb-2">Select Impact Category:</label>
+                                            <select id="categorySelector" class="w-full bg-white text-gray-800 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 border border-gray-300">
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="partSelector" class="block text-sm font-medium text-gray-700 mb-2">Filter by Product Part:</label>
+                                            <select id="partSelector" class="w-full bg-white text-gray-800 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 border border-gray-300">
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 id="chart-title" class="text-xl font-semibold text-center mb-4 text-gray-800">Breakdown by Source</h3>
+                                        <div class="chart-container">
+                                           <canvas id="breakdownChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Live Parameter Adjustment Section -->
+                                <div id="adjustment-panel" class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                    <h2 class="text-xl font-bold text-center text-gray-800 mb-6">Live Parameter Adjustment</h2>
+                                    <div id="adjustment-controls" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <!-- Dynamic controls will be injected here -->
+                                    </div>
+                                </div>
+
+                                <!-- Data Tables and Export Section -->
+                                <div id="tables-export-panel" class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                    <h2 class="text-xl font-bold text-center text-gray-800 mb-6">Data Tables & Export</h2>
+                                    
+                                    <div class="flex justify-center gap-4 mb-8">
+                                        <button id="exportJsonBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">Export Full Results (JSON)</button>
+                                        <button id="exportCsvBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">Export Current View (CSV)</button>
+                                    </div>
+
+                                    <div class="space-y-8">
+                                        <div>
+                                            <h3 class="text-lg font-semibold mb-2">Overall Impact Summary</h3>
+                                            <div class="table-container border border-gray-200 rounded-lg">
+                                                <table class="w-full text-sm text-left text-gray-600">
+                                                    <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0">
+                                                        <tr>
+                                                            <th scope="col" class="px-4 py-3">Category</th>
+                                                            <th scope="col" class="px-4 py-3">Total Score</th>
+                                                            <th scope="col" class="px-4 py-3">Unit</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="summaryTableBody" class="bg-white"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-lg font-semibold mb-2">Contribution by Source Type (Current View)</h3>
+                                             <div class="table-container border border-gray-200 rounded-lg">
+                                                <table class="w-full text-sm text-left text-gray-600">
+                                                    <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0">
+                                                        <tr>
+                                                            <th scope="col" class="px-4 py-3">Source Type</th>
+                                                            <th scope="col" class="px-4 py-3">Total Impact</th>
+                                                            <th scope="col" class="px-4 py-3">% of Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="contributionTableBody" class="bg-white"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-lg font-semibold mb-2">Detailed Breakdown (Current View)</h3>
+                                            <div class="table-container border border-gray-200 rounded-lg">
+                                                <table class="w-full text-sm text-left text-gray-600">
+                                                     <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0">
+                                                        <tr>
+                                                            <th scope="col" class="px-4 py-3">Source</th>
+                                                            <th scope="col" class="px-4 py-3">Type</th>
+                                                            <th scope="col" class="px-4 py-3">Impact Score</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="detailedTableBody" class="bg-white"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Interactive Circular Economy Diagram -->
+                                <div id="circular-economy-diagram" class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                    <h2 class="text-xl font-bold text-center text-gray-800 mb-6">Interactive Circular Economy Model</h2>
+                                    <p class="text-center text-gray-600 mb-6">Adjust the end-of-life parameters to see the impact on the material flows.</p>
+                                    
+                                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                        <!-- Diagram Section -->
+                                        <div class="lg:col-span-2 relative min-h-[500px] flex items-center justify-center bg-white rounded-lg border border-gray-200">
+                                            <!-- SVG for arrows -->
+                                            <svg class="absolute w-full h-full top-0 left-0" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+                                                <!-- Main flow -->
+                                                <path d="M 120 250 Q 200 150 400 150 T 680 250" stroke="#4a5568" stroke-width="4" fill="none" stroke-dasharray="10 5" marker-end="url(#arrowhead-gray)"/>
+                                                <path d="M 680 260 V 400" stroke="#4a5568" stroke-width="4" fill="none" stroke-dasharray="10 5" marker-end="url(#arrowhead-gray)"/>
+                                                
+                                                <!-- Recycle Flow -->
+                                                <path id="recycle-arrow" class="flow-arrow" d="M 400 450 Q 150 450 150 280" stroke="#2f855a" stroke-width="10" fill="none" marker-end="url(#arrowhead-recycle)" />
+                                                <!-- Reuse Flow -->
+                                                <path id="reuse-arrow" class="flow-arrow" d="M 400 450 Q 650 450 650 280" stroke="#2b6cb0" stroke-width="2" fill="none" marker-end="url(#arrowhead-reuse)" />
+                                                <!-- Landfill Flow -->
+                                                <path id="landfill-arrow" class="flow-arrow" d="M 400 450 V 500 H 750" stroke="#c53030" stroke-width="1" fill="none" marker-end="url(#arrowhead-landfill)"/>
+                                                
+                                                <defs>
+                                                    <marker id="arrowhead-gray" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                                        <polygon points="0 0, 10 3.5, 0 7" fill="#4a5568"/>
+                                                    </marker>
+                                                    <marker id="arrowhead-recycle" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                                        <polygon points="0 0, 10 3.5, 0 7" fill="#2f855a"/>
+                                                    </marker>
+                                                    <marker id="arrowhead-reuse" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                                        <polygon points="0 0, 10 3.5, 0 7" fill="#2b6cb0"/>
+                                                    </marker>
+                                                     <marker id="arrowhead-landfill" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                                        <polygon points="0 0, 10 3.5, 0 7" fill="#c53030"/>
+                                                    </marker>
+                                                </defs>
+                                            </svg>
+
+                                            <!-- Stages -->
+                                            <div class="relative w-full h-full">
+                                                <div id="extraction" class="ce-stage absolute top-1/2 -translate-y-1/2 left-[2%] w-28 h-28 bg-blue-100 border-2 border-blue-300 rounded-full flex flex-col items-center justify-center text-center p-2">
+                                                    <span class="text-3xl">⛏</span>
+                                                    <span class="font-semibold text-sm text-blue-800">Raw Materials</span>
+                                                </div>
+                                                <div id="manufacturing" class="ce-stage absolute top-[18%] left-1/2 -translate-x-1/2 w-28 h-28 bg-indigo-100 border-2 border-indigo-300 rounded-full flex flex-col items-center justify-center text-center p-2">
+                                                    <span class="text-3xl">🏭</span>
+                                                    <span class="font-semibold text-sm text-indigo-800">Manufacturing</span>
+                                                </div>
+                                                <div id="use" class="ce-stage absolute top-1/2 -translate-y-1/2 right-[2%] w-28 h-28 bg-green-100 border-2 border-green-300 rounded-full flex flex-col items-center justify-center text-center p-2">
+                                                    <span class="text-3xl">🏠</span>
+                                                    <span class="font-semibold text-sm text-green-800">Use Phase</span>
+                                                </div>
+                                                <div id="eol" class="ce-stage absolute bottom-[2%] left-1/2 -translate-x-1/2 w-28 h-28 bg-orange-100 border-2 border-orange-300 rounded-full flex flex-col items-center justify-center text-center p-2">
+                                                    <span class="text-3xl">♻</span>
+                                                    <span class="font-semibold text-sm text-orange-800">End-of-Life</span>
+                                                </div>
+                                                <div id="waste" class="ce-stage absolute bottom-[2%] right-[2%] w-28 h-28 bg-red-100 border-2 border-red-300 rounded-full flex flex-col items-center justify-center text-center p-2">
+                                                     <span class="text-3xl">🗑</span>
+                                                    <span class="font-semibold text-sm text-red-800">Landfill</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Controls Section -->
+                                        <div class="bg-gray-100 p-6 rounded-lg border border-gray-200">
+                                            <h3 class="text-lg font-bold mb-6 text-center text-gray-800">End-of-Life Controls</h3>
+
+                                            <!-- Recycling Control -->
+                                            <div class="mb-6">
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <label for="ce-recycling" class="font-medium text-green-700">Recycling</label>
+                                                    <span id="ce-recycling-value" class="font-bold text-lg text-green-700 bg-green-100 px-3 py-1 rounded-md">50%</span>
+                                                </div>
+                                                <input type="range" id="ce-recycling" min="0" max="100" value="50" class="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer">
+                                            </div>
+
+                                            <!-- Reuse Control -->
+                                            <div class="mb-6">
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <label for="ce-reuse" class="font-medium text-blue-700">Reuse</label>
+                                                    <span id="ce-reuse-value" class="font-bold text-lg text-blue-700 bg-blue-100 px-3 py-1 rounded-md">20%</span>
+                                                </div>
+                                                <input type="range" id="ce-reuse" min="0" max="100" value="20" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                                            </div>
+
+                                            <!-- Landfill Control -->
+                                            <div class="mb-6">
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <label for="ce-landfill" class="font-medium text-red-700">Landfill</label>
+                                                    <span id="ce-landfill-value" class="font-bold text-lg text-red-700 bg-red-100 px-3 py-1 rounded-md">30%</span>
+                                                </div>
+                                                <input type="range" id="ce-landfill" min="0" max="100" value="30" class="w-full h-2 bg-red-200 rounded-lg appearance-none cursor-pointer">
+                                            </div>
+                                            
+                                            <div id="ce-warning" class="mt-4 text-center text-red-600 font-medium h-6"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 flex justify-end">
+                                    <button type="button" onclick="saveAndProceed('reports')" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors font-semibold">Proceed to Reports</button>
+                                </div>
+                            </div>
+
+                            <!-- Column 3: AI Assistant (Analysis Tab) -->
+                            <div class="md:col-span-1 border-t md:border-t-0 md:border-l pl-4 pt-4 md:pt-0 space-y-6">
+                                <!-- AI Suggestion Section -->
+                                <div class="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
+                                    <h3 class="font-bold text-sm text-yellow-800 flex items-center mb-2">
+                                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                                        AI Suggestions for Analysis
+                                    </h3>
+                                    <div id="ai-suggestion-analysis" class="text-xs text-yellow-700">
+                                        Analysis suggests the **Transport** phase is a key environmental hotspot for Global Warming Potential. Consider sourcing materials locally or using more efficient transport like Rail over Ship to mitigate this impact.
+                                    </div>
+                                </div>
+                                 <!-- Chatbot Section -->
+                                <div id="lca-assistant-bot-analysis" class="bg-gray-100 p-4 rounded-lg shadow-inner flex flex-col h-[400px]">
+                                    <h3 class="font-bold text-md text-gray-800 mb-3 border-b pb-2">LCA-AssistantBot</h3>
+                                    <div id="chat-history-analysis" class="flex-grow overflow-y-auto space-y-3 mb-3 text-sm pr-1">
+                                        <div class="flex justify-start"><span class="bg-blue-200 text-blue-800 p-2 rounded-lg rounded-tl-none max-w-xs">Chat is disabled in this simulation. Download the full project from GitHub for live interaction.</span></div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="lca-assistant-question-analysis" class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Chat is disabled" disabled>
+                                        <button type="button" id="lca-assistant-askBtn-analysis" onclick="handleChatQuery('lca-assistant-askBtn-analysis')" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 flex-shrink-0" disabled>
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        </button>
+                                    </div>
+                                    <div id="lca-assistant-loader-analysis" class="text-center mt-2 text-xs text-gray-500 hidden">Thinking...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports & Recommendations (Tab 4) -->
+            <div id="reports" class="tab-content">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <!-- Full Width Report Output -->
+                        <div class="md:col-span-3">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-gray-800">Report and Recommendations</h2>
+                                <button onclick="window.print()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium">Print or Save as PDF</button>
+                            </div>
+                            <div id="reportOutput" class="p-6 border rounded-md bg-gray-50 min-h-[400px] whitespace-pre-wrap text-sm text-gray-700">
+                                The generated report will appear here once you proceed from the analysis tab.
+                            </div>
+                            <div id="recommendation-loader" class="text-center py-4 text-gray-500 hidden">
+                                <div class="loader loader-sm mx-auto"></div>
+                                <p class="mt-2 text-sm">Generating AI recommendations...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom Toast/Message Area -->
+    <div id="custom-toast-container"></div>
+
+    <!-- Report Chatbot Widget -->
+    <div id="report-chatbot-container" class="hidden fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
+        <div class="flex justify-between items-center p-3 bg-gray-100 border-b rounded-t-lg">
+            <h3 class="font-bold text-md text-gray-800">Ask About The Report</h3>
+            <button onclick="document.getElementById('report-chatbot-container').classList.add('hidden')" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+        </div>
+        <div id="report-chat-history" class="flex-grow h-64 overflow-y-auto space-y-3 p-3 text-sm">
+            <div class="flex justify-start"><span class="bg-blue-200 text-blue-800 p-2 rounded-lg rounded-tl-none max-w-xs">Chat is disabled for this simulation. Please download the full code from GitHub to ask questions about the report.</span></div>
+        </div>
+        <div class="p-3 border-t">
+            <div class="flex gap-2">
+                <input type="text" id="report-chat-question" class="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Chat is disabled" disabled>
+                <button type="button" id="report-chat-askBtn" onclick="handleReportChatQuery()" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 flex-shrink-0" disabled>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </button>
+            </div>
+            <div id="report-chat-loader" class="text-center mt-2 text-xs text-gray-500 hidden">Thinking...</div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let projectData = { 
+            details: {},
+            parts: {} 
+        };
+        let activePart = null;
+        let currentApiResult = null;
+        let currentInputDataForApi = null; 
+        let componentTotals = {};
+        let breakdownChartInstance = null;
+
+
+        // --- Default Data for AI Fill & JSON Export ---
+        const defaultPartData = {
+          "InputParameters": {
+            "RawMaterials": [
+              { "name": "Bauxite", "amount": 17.28, "unit": "kg" },
+              { "name": "Scrap Aluminium", "amount": 1.12, "unit": "kg" }
+            ],
+            "ProcessEnergy": [
+              { "process": "Bayer Process", "energy_type": "Coal (Thermal)", "amount": 14.58, "unit": "MJ" },
+              { "process": "Smelting", "energy_type": "Grid Mix (Electrical)", "amount": 36.5, "unit": "kWh" },
+              { "process": "Scrap Preparation", "energy_type": "Grid Mix (Electrical)", "amount": 0.3, "unit": "kWh" },
+              { "process": "Remelting", "energy_type": "Grid Mix (Electrical)", "amount": 4, "unit": "kWh" }
+            ],
+            "Transport": [
+              { "mode": "Ship", "distance": 1000, "unit": "km" },
+              { "mode": "Rail", "distance": 500, "unit": "km" },
+              { "mode": "Truck", "distance": 400, "unit": "km" }
+            ]
+          },
+          "OutputParameters": {
+            "EmissionsToAir": [
+              { "substance": "CO2", "amount": 5.5, "unit": "kg" },
+              { "substance": "SOx", "amount": 0.041, "unit": "kg" },
+              { "substance": "NOx", "amount": 0.022, "unit": "kg" },
+              { "substance": "Particulates", "amount": 0.031, "unit": "kg" }
+            ],
+            "EmissionsToWater": [
+              { "substance": "Heavy Metals (e.g., Pb, Hg)", "amount": 4.3, "unit": "kg" }
+            ],
+            "EmissionsToSoil": [
+              { "substance": "Mine Tailings", "amount": 6, "unit": "kg" }
+            ],
+            "FinalWasteFlow": [
+              { "waste": "Non-hazardous", "amount": 5.2, "unit": "kg" }
+            ]
+          },
+          "UseAndEndOfLife": {
+            "UsePhase": { "lifespan": 40, "energy_per_year": 0 },
+            "EndOfLife": { "Recycling": 95, "Reuse": 3, "Landfill": 2 }
+          }
+        };
+
+
+        // --- Configuration for Dynamic Items ---
+        const itemConfigs = {
+            rawMaterials: {
+                fields: [
+                    { key: 'name', type: 'select', options: ['Bauxite', 'Copper Ore', 'Limestone', 'Scrap Aluminium'], placeholder: 'Material' },
+                    { key: 'amount', type: 'number', placeholder: 'Amount' },
+                    { key: 'unit', type: 'select', options: ['kg', 'tons', 'm³'], placeholder: 'Unit' }
+                ]
+            },
+            processAndEnergy: {
+                fields: [
+                    { key: 'name', type: 'select', options: ['Bayer Process', 'Smelting', 'Refining', 'Casting', 'Scrap Preparation', 'Remelting'], placeholder: 'Process Name' },
+                    { key: 'energyType', type: 'select', options: ['Grid Mix', 'Hydroelectric', 'Natural Gas', 'Coal (Thermal)', 'Grid Mix (Electrical)'], placeholder: 'Energy Type' },
+                    { key: 'energyAmount', type: 'number', placeholder: 'Amount' },
+                    { key: 'energyUnit', type: 'select', options: ['kWh', 'MJ'], placeholder: 'Unit' }
+                ]
+            },
+            transport: {
+                fields: [
+                    { key: 'mode', type: 'select', options: ['Truck', 'Rail', 'Ship', 'Air'], placeholder: 'Mode' },
+                    { key: 'distance', type: 'number', placeholder: 'Distance' },
+                    { key: 'unit', type: 'select', options: ['km', 'miles'], placeholder: 'Unit' }
+                ]
+            },
+            airEmissions: {
+                fields: [
+                    { key: 'substance', type: 'select', options: ['CO2', 'SOx', 'NOx', 'Particulates'], placeholder: 'Substance' },
+                    { key: 'amount', type: 'number', placeholder: 'Amount' },
+                    { key: 'unit', type: 'select', options: ['kg', 'tons'], placeholder: 'Unit' }
+                ]
+            },
+            waterEmissions: {
+                fields: [
+                    { key: 'substance', type: 'select', options: ['Heavy Metals (e.g., Pb, Hg)', 'Nitrates', 'Phosphates', 'Suspended Solids', 'Acid Mine Drainage'], placeholder: 'Substance' },
+                    { key: 'amount', type: 'number', placeholder: 'Amount' },
+                    { key: 'unit', type: 'select', options: ['kg', 'mg/L'], placeholder: 'Unit' }
+                ]
+            },
+            soilEmissions: {
+                fields: [
+                    { key: 'substance', type: 'select', options: ['Mine Tailings', 'Overburden', 'Waste Rock', 'Slag Leachate'], placeholder: 'Substance' },
+                    { key: 'amount', type: 'number', placeholder: 'Amount' },
+                    { key: 'unit', type: 'select', options: ['kg', 'tons'], placeholder: 'Unit' }
+                ]
+            },
+            finalWaste: {
+                fields: [{ key: 'type', type: 'select', options: ['Hazardous', 'Non-hazardous', 'Slag'], placeholder: 'Type' }, { key: 'amount', type: 'number', placeholder: 'Amount' }, { key: 'unit', type: 'select', options: ['kg', 'tons'], placeholder: 'Unit' }],
+            }
+        };
+
+        // --- Custom Message/Toast Function (Replaces alert) ---
+        function showCustomMessage(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            
+            const toastContainer = document.getElementById('custom-toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast p-3 rounded-lg shadow-xl text-white z-50 transition-transform transform duration-300 translate-x-full ${type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600'} flex items-center gap-2`;
+            toast.innerHTML = `<span class="font-medium">${message}</span>`;
+            toastContainer.appendChild(toast);
+
+            // Show toast
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+
+            // Hide and remove toast
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 3000);
+        }
+
+        // --- Tab Management ---
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+
+        function changeTab(tabId) {
+            // Prevent navigating to disabled tabs
+            if (document.getElementById(`tab-btn-${tabId}`).disabled) {
+                return;
+            }
+
+            if (tabId !== 'reports') {
+                document.getElementById('report-chatbot-container').classList.add('hidden');
+            }
+
+            contents.forEach(content => content.classList.remove('active'));
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+        }
+
+        async function saveAndProceed(nextTabId) {
+            const currentTabId = document.querySelector('.tab-content.active').id;
+
+            // --- Data Saving Logic ---
+            if (currentTabId === 'projectSetup') {
+                projectData.details.projectName = document.getElementById('projectName').value;
+                projectData.details.projectGoal = document.getElementById('projectGoal').value;
+                projectData.details.projectDescription = document.getElementById('projectDescription').value;
+                projectData.details.analysisScope = document.getElementById('analysisScope').value;
+                projectData.details.functionalUnit = document.getElementById('functionalUnit').value;
+            } else if (currentTabId === 'assembly') {
+                if (Object.keys(projectData.parts).length === 0) {
+                    showCustomMessage("Please add at least one part before proceeding.", 'error');
+                    return;
+                }
+                if (activePart) savePartData(activePart);
+                
+            } else if (currentTabId === 'analysis') {
+                // The generateReport function is now async, so we await it
+                await generateReport();
+            }
+
+            // --- Unlock and Switch Tab ---
+            document.getElementById(`tab-btn-${nextTabId}`).disabled = false;
+            changeTab(nextTabId);
+            
+            if (nextTabId === 'analysis') {
+                runAnalysis();
+            } else if (nextTabId === 'reports' && currentTabId === 'analysis') {
+                 await generateReport();
+            }
+        }
+
+
+        // --- Assembly & Data Management ---
+        function addPart() {
+            const partName = prompt("Enter a name for the new part (e.g., 'Aluminium Panel', 'Aluminium Frame'):"); 
+
+            if (partName && !projectData.parts[partName]) {
+                const isFirstPart = Object.keys(projectData.parts).length === 0;
+
+                if (activePart) savePartData(activePart);
+                projectData.parts[partName] = getNewPartTemplate();
+                activePart = partName;
+                renderPartsList();
+                loadPartData(partName);
+                toggleLCIForm();
+
+                if (isFirstPart) {
+                    getPartSuggestions(partName); 
+                }
+                
+            } else if (projectData.parts[partName]) {
+                showCustomMessage("A part with this name already exists.", 'error');
+            }
+        }
+
+        function deletePart(partName) {
+            // Using custom message instead of confirm for iframe compatibility
+            showCustomMessage(`Part "${partName}" deleted. (This would normally require confirmation)`, 'info');
+            delete projectData.parts[partName];
+            if (activePart === partName) activePart = Object.keys(projectData.parts)[0] || null;
+            renderPartsList();
+            if (activePart) {
+                loadPartData(activePart);
+            }
+            toggleLCIForm();
+        }
+
+        function selectPart(partName) {
+            if (activePart === partName) return;
+            if (activePart) savePartData(activePart);
+            activePart = partName;
+            loadPartData(partName);
+            renderPartsList();
+        }
+
+        function renderPartsList() {
+            const listContainer = document.getElementById('partsList');
+            listContainer.innerHTML = '';
+            const partNames = Object.keys(projectData.parts);
+            if (partNames.length === 0) {
+                listContainer.innerHTML = `<p class="text-gray-500 text-center py-4">No parts added yet.</p>`;
+                return;
+            }
+            partNames.forEach(name => {
+                const partElement = document.createElement('div');
+                partElement.className = `part-item flex items-center justify-between p-3 rounded-md border cursor-pointer hover:bg-gray-200 ${name === activePart ? 'active' : ''}`;
+                partElement.setAttribute('onclick', `selectPart('${name}')`);
+                partElement.innerHTML = `<span class="font-medium text-gray-800">${name}</span><button onclick="event.stopPropagation(); deletePart('${name}')" class="text-red-500 hover:text-red-700 font-semibold text-sm">Delete</button>`;
+                listContainer.appendChild(partElement);
+            });
+        }
+        
+        function toggleLCIForm() {
+            const hasActivePart = activePart !== null;
+            const formContainer = document.getElementById('lci-form-container');
+            const placeholder = document.getElementById('lci-placeholder');
+            const aiButton = document.getElementById('aiButton');
+            
+            if (hasActivePart) {
+                formContainer.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                aiButton.classList.remove('hidden');
+                aiButton.style.display = 'flex'; // Keep flex display for this one
+            } else {
+                formContainer.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                aiButton.classList.add('hidden');
+            }
+            
+            document.getElementById('lci-title').textContent = hasActivePart ? `LCI for: ${activePart}` : 'Life Cycle Inventory';
+        }
+
+        function getNewPartTemplate() {
+            return {
+                inputs: { rawMaterials: [], processAndEnergy: [], transport: [] },
+                outputs: { airEmissions: [], waterEmissions: [], soilEmissions: [], finalWaste: [] },
+                usePhase: { 'use-lifespan': '', 'use-energy': '' },
+                endOfLife: { 'eol-recycling': 90, 'eol-reuse': 5, 'eol-landfill': 5 }
+            };
+        }
+
+        function savePartData(partName) {
+            if (!partName || !projectData.parts[partName]) return;
+            const part = projectData.parts[partName];
+            Object.keys(itemConfigs).forEach(category => {
+                const parentKey = ['rawMaterials', 'processAndEnergy', 'transport'].includes(category) ? 'inputs' : 'outputs';
+                part[parentKey][category] = [];
+                const list = document.getElementById(`${category}-list`);
+                list.querySelectorAll('.item-row').forEach(row => {
+                    const rowData = {};
+                    row.querySelectorAll('.data-field').forEach(field => {
+                        rowData[field.dataset.key] = field.value;
+                    });
+                    part[parentKey][category].push(rowData);
+                });
+            });
+            ['use-lifespan', 'use-energy'].forEach(id => part.usePhase[id] = document.getElementById(id).value);
+            ['eol-recycling', 'eol-reuse', 'eol-landfill'].forEach(id => part.endOfLife[id] = document.getElementById(id).value);
+        }
+
+        function loadPartData(partName) {
+            if (!partName || !projectData.parts[partName]) return;
+            const part = projectData.parts[partName];
+            Object.keys(itemConfigs).forEach(category => {
+                const parentKey = ['rawMaterials', 'processAndEnergy', 'transport'].includes(category) ? 'inputs' : 'outputs';
+                const list = document.getElementById(`${category}-list`);
+                list.innerHTML = '';
+                if (part[parentKey][category]) {
+                    part[parentKey][category].forEach(item => addItem(category, item));
+                }
+            });
+             ['use-lifespan', 'use-energy'].forEach(id => document.getElementById(id).value = part.usePhase[id] || '');
+            ['eol-recycling', 'eol-reuse', 'eol-landfill'].forEach(id => document.getElementById(id).value = part.endOfLife[id] || '');
+            toggleLCIForm();
+        }
+
+        function addItem(category, data = {}) {
+            const config = itemConfigs[category];
+            const list = document.getElementById(`${category}-list`);
+            const itemRow = document.createElement('div');
+            itemRow.className = 'item-row flex items-center gap-2 text-sm bg-gray-50 p-1 rounded';
+            
+            config.fields.forEach(field => {
+                let inputEl;
+                if (field.type === 'select') {
+                    inputEl = document.createElement('select');
+                    field.options.forEach(opt => inputEl.add(new Option(opt, opt)));
+                } else {
+                    inputEl = document.createElement('input');
+                    inputEl.type = field.type;
+                    inputEl.placeholder = field.placeholder;
+                }
+                inputEl.className = 'data-field p-1 border rounded w-full bg-white text-sm';
+                inputEl.dataset.key = field.key;
+                inputEl.value = data[field.key] || '';
+                itemRow.appendChild(inputEl);
+            });
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'font-bold text-red-500 hover:text-red-700 px-2';
+            removeBtn.onclick = () => itemRow.remove();
+            itemRow.appendChild(removeBtn);
+
+            list.appendChild(itemRow);
+        }
+
+        // --- AI & Analysis (SIMULATED) ---
+        
+        function formatMarkdownToHTML(text) {
+            if (!text) return '';
+            
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            text = text.replace(/\n/g, '<br>');
+            
+            const lines = text.split('<br>');
+            let inList = false;
+            let formattedLines = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (/^\d+\.\s/.test(line)) {
+                    if (!inList) {
+                        formattedLines.push('<ol class="list-decimal list-inside ml-4 space-y-1">');
+                        inList = true;
+                    }
+                    const content = line.replace(/^\d+\.\s/, '');
+                    formattedLines.push(`<li class="text-sm">${content}</li>`);
+                } else {
+                    if (inList) {
+                        formattedLines.push('</ol>');
+                        inList = false;
+                    }
+                    if (line) {
+                        formattedLines.push(`<p class="mb-2">${line}</p>`);
+                    }
+                }
+            }
+            
+            if (inList) {
+                formattedLines.push('</ol>');
+            }
+            
+            return formattedLines.join('');
+        }
+        
+        async function getPartSuggestions(partName) {
+            const suggestionPanel = document.getElementById('ai-suggestion-assembly');
+            if (!suggestionPanel) return;
+
+            suggestionPanel.innerHTML = '<div class="flex justify-center items-center h-full py-4"><div class="loader loader-sm border-t-yellow-500"></div><span class="text-yellow-700 ml-2">Generating suggestions...</span></div>';
+            
+            // SIMULATED API RESPONSE
+            const mockResponse = `**This is a simulated response.** For a real project, you can get AI-powered suggestions. Here’s a sample guide:
+
+**1. Raw Materials:** Add all main input materials and their amounts (e.g., bauxite, scrap aluminium).
+**2. Process & Energy:** List all major manufacturing processes (e.g., Bayer process, smelting) and the energy used.
+**3. Transport:** Record how materials are transported (ship, rail, truck) and specify distances.
+**4. Output Parameters / Emissions:** Add emissions generated (e.g., CO₂, SOx, NOx).
+
+You can use the "Estimate Missing Data" button to populate fields with sample data for this demo. For real results, please download the full project from GitHub.`;
+
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+
+            const formattedAnswer = formatMarkdownToHTML(mockResponse);
+            let html = '<div class="text-xs text-gray-700 leading-relaxed">' + formattedAnswer + '</div>';
+            suggestionPanel.innerHTML = html;
+            showCustomMessage(`AI suggestions generated for part: ${partName}`, 'success');
+        }
+        
+        function runAiEstimation() {
+            if (!activePart) { showCustomMessage("Please select a part first.", "error"); return; }
+        
+            const part = projectData.parts[activePart];
+        
+            if (part.inputs.rawMaterials.length === 0) {
+                defaultPartData.InputParameters.RawMaterials.forEach(item => addItem('rawMaterials', item));
+            }
+            if (part.inputs.processAndEnergy.length === 0) {
+                defaultPartData.InputParameters.ProcessEnergy.forEach(item => {
+                    const mappedItem = { name: item.process, energyType: item.energy_type, energyAmount: item.amount, energyUnit: item.unit };
+                    addItem('processAndEnergy', mappedItem);
+                });
+            }
+            if (part.inputs.transport.length === 0) {
+                defaultPartData.InputParameters.Transport.forEach(item => addItem('transport', item));
+            }
+            if (part.outputs.airEmissions.length === 0) {
+                defaultPartData.OutputParameters.EmissionsToAir.forEach(item => addItem('airEmissions', item));
+            }
+            if (part.outputs.waterEmissions.length === 0) {
+                defaultPartData.OutputParameters.EmissionsToWater.forEach(item => addItem('waterEmissions', item));
+            }
+            if (part.outputs.soilEmissions.length === 0) {
+                defaultPartData.OutputParameters.EmissionsToSoil.forEach(item => addItem('soilEmissions', item));
+            }
+             if (part.outputs.finalWaste.length === 0) {
+                defaultPartData.OutputParameters.FinalWasteFlow.forEach(item => {
+                    const mappedItem = { type: item.waste, amount: item.amount, unit: item.unit };
+                    addItem('finalWaste', mappedItem);
+                });
+            }
+        
+            if (!document.getElementById('use-lifespan').value) document.getElementById('use-lifespan').value = defaultPartData.UseAndEndOfLife.UsePhase.lifespan;
+            if (!document.getElementById('use-energy').value) document.getElementById('use-energy').value = defaultPartData.UseAndEndOfLife.UsePhase.energy_per_year;
+            if (!document.getElementById('eol-recycling').value) document.getElementById('eol-recycling').value = defaultPartData.UseAndEndOfLife.EndOfLife.Recycling;
+            if (!document.getElementById('eol-reuse').value) document.getElementById('eol-reuse').value = defaultPartData.UseAndEndOfLife.EndOfLife.Reuse;
+            if (!document.getElementById('eol-landfill').value) document.getElementById('eol-landfill').value = defaultPartData.UseAndEndOfLife.EndOfLife.Landfill;
+
+            showCustomMessage('AI has filled empty fields with default data.', 'success');
+        }
+
+        function generateJsonForApi() {
+            const finalData = [];
+            for (const partName in projectData.parts) {
+                const part = projectData.parts[partName];
+                const partJson = {
+                    name: partName,
+                    InputParameters: {
+                        RawMaterials: part.inputs.rawMaterials.map(item => ({...item, amount: parseFloat(item.amount) || 0})),
+                        ProcessEnergy: part.inputs.processAndEnergy.map(item => ({ process: item.name, energy_type: item.energyType, amount: parseFloat(item.energyAmount) || 0, unit: item.energyUnit })),
+                        Transport: part.inputs.transport.map(item => ({...item, distance: parseFloat(item.distance) || 0 })),
+                    },
+                    OutputParameters: {
+                        EmissionsToAir: part.outputs.airEmissions.map(item => ({...item, amount: parseFloat(item.amount) || 0 })),
+                        EmissionsToWater: part.outputs.waterEmissions.map(item => ({...item, amount: parseFloat(item.amount) || 0 })),
+                        EmissionsToSoil: part.outputs.soilEmissions.map(item => ({...item, amount: parseFloat(item.amount) || 0 })),
+                        FinalWasteFlow: part.outputs.finalWaste.map(item => ({ waste: item.type, amount: parseFloat(item.amount) || 0, unit: item.unit })),
+                    },
+                    UseAndEndOfLife: {
+                        UsePhase: {
+                            lifespan: parseInt(part.usePhase['use-lifespan']) || 0, unit: "years", energy_per_year: parseFloat(part.usePhase['use-energy']) || 0,
+                        },
+                        EndOfLife: {
+                            Recycling: parseInt(part.endOfLife['eol-recycling']) || 0, Reuse: parseInt(part.endOfLife['eol-reuse']) || 0, Landfill: parseInt(part.endOfLife['eol-landfill']) || 0, unit: "%"
+                        }
+                    }
+                };
+                finalData.push(partJson);
+            }
+            return finalData;
+        }
+
+        // --- VISUALIZATION LOGIC (SIMULATED) ---
+        const debouncedRecalculate = debounce(() => runAnalysis(true), 500);
+
+        async function runAnalysis(isDebouncedCall = false) {
+            const analysisPlaceholder = document.getElementById('analysis-placeholder');
+            const analysisContent = document.getElementById('analysis-content');
+            const analysisLoader = document.getElementById('analysis-loader');
+            const errorContainer = document.getElementById('error-message');
+            
+            analysisContent.classList.add('hidden');
+            analysisPlaceholder.classList.remove('hidden');
+            analysisLoader.classList.remove('hidden');
+            errorContainer.classList.add('hidden');
+            document.getElementById('analysis-placeholder-text').textContent = 'Calculating...';
+
+            let data;
+            if (isDebouncedCall) {
+                data = currentInputDataForApi;
+            } else {
+                data = generateJsonForApi();
+                currentInputDataForApi = JSON.parse(JSON.stringify(data));
+            }
+
+            // SIMULATED API CALL
+            try {
+                // Simulate network delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // MOCK API 2 RESPONSE
+                const result = {"impact_assessment":[{"category":"Global Warming Potential","total_score":368.321,"unit":"kg CO2-eq","breakdown":[{"source":"Ship (Aluminium Panel)","type":"Transport","score":150},{"source":"Ship (Aluminium Handle)","type":"Transport","score":150},{"source":"Smelting (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":14.600000000000001},{"source":"Smelting (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":14.600000000000001},{"source":"Rail (Aluminium Panel)","type":"Transport","score":12.5},{"source":"Rail (Aluminium Handle)","type":"Transport","score":12.5},{"source":"Truck (Aluminium Panel)","type":"Transport","score":4},{"source":"Truck (Aluminium Handle)","type":"Transport","score":4},{"source":"Remelting (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":1.6},{"source":"Remelting (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":1.6},{"source":"Bauxite (Aluminium Panel)","type":"Raw Material","score":0.8640000000000001},{"source":"Bauxite (Aluminium Handle)","type":"Raw Material","score":0.8640000000000001},{"source":"Bayer Process (Coal (Thermal)) (Aluminium Panel)","type":"Process Energy","score":0.3645},{"source":"Bayer Process (Coal (Thermal)) (Aluminium Handle)","type":"Process Energy","score":0.3645},{"source":"Scrap Preparation (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":0.12},{"source":"Scrap Preparation (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":0.12},{"source":"Scrap Aluminium (Aluminium Panel)","type":"Raw Material","score":0.11200000000000002},{"source":"Scrap Aluminium (Aluminium Handle)","type":"Raw Material","score":0.11200000000000002}],"normalization":{"normalized_score":0.0375072301425662,"annual_impact_percentage":3.7507230142566197}},{"category":"Terrestrial Acidification","total_score":5.2406688,"unit":"kg SO2-eq","breakdown":[{"source":"Ship (Aluminium Panel)","type":"Transport","score":2.4},{"source":"Ship (Aluminium Handle)","type":"Transport","score":2.4},{"source":"Rail (Aluminium Panel)","type":"Transport","score":0.06},{"source":"Rail (Aluminium Handle)","type":"Transport","score":0.06},{"source":"Smelting (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":0.049275},{"source":"Smelting (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":0.049275},{"source":"Bauxite (Aluminium Panel)","type":"Raw Material","score":0.041471999999999995},{"source":"Bauxite (Aluminium Handle)","type":"Raw Material","score":0.041471999999999995},{"source":"Direct SOx (Aluminium Panel)","type":"Direct Emission","score":0.041},{"source":"Direct SOx (Aluminium Handle)","type":"Direct Emission","score":0.041},{"source":"Direct NOx (Aluminium Panel)","type":"Direct Emission","score":0.015399999999999999},{"source":"Direct NOx (Aluminium Handle)","type":"Direct Emission","score":0.015399999999999999},{"source":"Remelting (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":0.0054},{"source":"Remelting (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":0.0054},{"source":"Truck (Aluminium Panel)","type":"Transport","score":0.004599999999999999},{"source":"Truck (Aluminium Handle)","type":"Transport","score":0.004599999999999999},{"source":"Bayer Process (Coal (Thermal)) (Aluminium Panel)","type":"Process Energy","score":0.0025919999999999997},{"source":"Bayer Process (Coal (Thermal)) (Aluminium Handle)","type":"Process Energy","score":0.0025919999999999997},{"source":"Scrap Preparation (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":0.000405},{"source":"Scrap Preparation (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":0.000405},{"source":"Scrap Aluminium (Aluminium Panel)","type":"Raw Material","score":0.00019040000000000002},{"source":"Scrap Aluminium (Aluminium Handle)","type":"Raw Material","score":0.00019040000000000002}],"normalization":{"normalized_score":0.12628117590361446,"annual_impact_percentage":12.628117590361446}},{"category":"Particulate Matter Formation","total_score":0.65466,"unit":"kg PM2.5-eq","breakdown":[{"source":"Bauxite (Aluminium Panel)","type":"Raw Material","score":0.1728},{"source":"Bauxite (Aluminium Handle)","type":"Raw Material","score":0.1728},{"source":"Ship (Aluminium Panel)","type":"Transport","score":0.1},{"source":"Ship (Aluminium Handle)","type":"Transport","score":0.1},{"source":"Direct Particulates (Aluminium Panel)","type":"Direct Emission","score":0.031},{"source":"Direct Particulates (Aluminium Handle)","type":"Direct Emission","score":0.031},{"source":"Rail (Aluminium Panel)","type":"Transport","score":0.01},{"source":"Rail (Aluminium Handle)","type":"Transport","score":0.01},{"source":"Smelting (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":0.0073},{"source":"Smelting (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":0.0073},{"source":"Bayer Process (Coal (Thermal)) (Aluminium Panel)","type":"Process Energy","score":0.00405},{"source":"Bayer Process (Coal (Thermal)) (Aluminium Handle)","type":"Process Energy","score":0.00405},{"source":"Scrap Aluminium (Aluminium Panel)","type":"Raw Material","score":0.0011200000000000001},{"source":"Scrap Aluminium (Aluminium Handle)","type":"Raw Material","score":0.0011200000000000001},{"source":"Remelting (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":0.0008},{"source":"Remelting (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":0.0008},{"source":"Truck (Aluminium Panel)","type":"Transport","score":0.0002},{"source":"Truck (Aluminium Handle)","type":"Transport","score":0.0002},{"source":"Scrap Preparation (Grid Mix (Electrical)) (Aluminium Panel)","type":"Process Energy","score":0.00006},{"source":"Scrap Preparation (Grid Mix (Electrical)) (Aluminium Handle)","type":"Process Energy","score":0.00006}],"normalization":{"normalized_score":0.047097841726618704,"annual_impact_percentage":4.7097841726618705}},{"category":"Human Carcinogenic Toxicity","total_score":215,"unit":"kg 1,4-DCB-eq","breakdown":[{"source":"Direct Heavy Metals (e.g., Pb, Hg) (Aluminium Panel)","type":"Direct Emission","score":107.5},{"source":"Direct Heavy Metals (e.g., Pb, Hg) (Aluminium Handle)","type":"Direct Emission","score":107.5}],"normalization":{"normalized_score":0.19369369369369369,"annual_impact_percentage":19.36936936936937}},{"category":"Mineral Resource Scarcity","total_score":156.2112,"unit":"kg Cu-eq","breakdown":[{"source":"Bauxite (Aluminium Panel)","type":"Raw Material","score":78.1056},{"source":"Bauxite (Aluminium Handle)","type":"Raw Material","score":78.1056}],"normalization":{"normalized_score":0.11192319266317975,"annual_impact_percentage":11.192319266317975}}]};
+
+                currentApiResult = result; 
+                
+                analysisLoader.classList.add('hidden');
+                analysisPlaceholder.classList.add('hidden');
+                analysisContent.classList.remove('hidden');
+                
+                populateSummaryCards(result.impact_assessment);
+                
+                if (!isDebouncedCall) {
+                    populateCategorySelector(result.impact_assessment);
+                    populatePartSelector(data);
+                    populateAdjustmentControls(data);
+                }
+                updateVisuals();
+
+            } catch (error) {
+                 analysisLoader.classList.add('hidden');
+                 document.getElementById('analysis-placeholder-text').textContent = 'Calculation Failed.';
+                 document.getElementById('error-text').textContent = `Simulation Error: ${error.message}.`;
+                 errorContainer.classList.remove('hidden');
+            }
+        }
+        
+        function updateVisuals() {
+            if (!currentApiResult) return;
+            const categorySelector = document.getElementById('categorySelector');
+            const partSelector = document.getElementById('partSelector');
+            const selectedCategoryName = categorySelector.value;
+            const selectedPartName = partSelector.value; 
+            const categoryData = currentApiResult.impact_assessment.find(c => c.category === selectedCategoryName);
+
+            if (!categoryData) return;
+            
+            let breakdownData = categoryData.breakdown;
+            if (selectedPartName !== 'All Parts') {
+                breakdownData = breakdownData.filter(item => item.source.includes(`(${selectedPartName})`));
+            }
+            
+            renderBreakdownChart(categoryData, breakdownData);
+            populateTables(breakdownData);
+        }
+
+        function populateSummaryCards(impactAssessment) {
+            const summaryCardsContainer = document.getElementById('summary-cards');
+            summaryCardsContainer.innerHTML = ''; 
+            impactAssessment.forEach(item => {
+                const card = `
+                    <div class="bg-gray-100 p-3 rounded-lg text-center border">
+                        <p class="text-sm text-gray-600">${item.category}</p>
+                        <p class="text-lg font-bold text-gray-900">${item.total_score.toFixed(2)}</p>
+                        <p class="text-xs text-gray-500">${item.unit}</p>
+                    </div>
+                `;
+                summaryCardsContainer.innerHTML += card;
+            });
+        }
+        
+        function populateCategorySelector(impactAssessment) {
+            const categorySelector = document.getElementById('categorySelector');
+            categorySelector.innerHTML = '';
+            impactAssessment.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.category;
+                option.textContent = item.category;
+                categorySelector.appendChild(option);
+            });
+        }
+        
+        function populatePartSelector(inputData) {
+            const partSelector = document.getElementById('partSelector');
+            partSelector.innerHTML = '';
+            const allPartsOption = document.createElement('option');
+            allPartsOption.value = 'All Parts';
+            allPartsOption.textContent = 'All Parts';
+            partSelector.appendChild(allPartsOption);
+
+            if (Array.isArray(inputData)) {
+                inputData.forEach(component => {
+                    const option = document.createElement('option');
+                    option.value = component.name;
+                    option.textContent = component.name;
+                    partSelector.appendChild(option);
+                });
+            }
+        }
+        
+        function populateAdjustmentControls(inputData) {
+            const adjustmentControlsContainer = document.getElementById('adjustment-controls');
+            adjustmentControlsContainer.innerHTML = '';
+            componentTotals = {}; 
+            if (!Array.isArray(inputData)) return;
+
+            inputData.forEach((component, compIndex) => {
+                const bauxite = component.InputParameters.RawMaterials.find(rm => rm.name === 'Bauxite');
+                const scrap = component.InputParameters.RawMaterials.find(rm => rm.name === 'Scrap Aluminium');
+                if (bauxite && scrap) {
+                    const bauxiteYield = 0.265; 
+                    const totalAluminium = (bauxite.amount * bauxiteYield) + scrap.amount;
+                    componentTotals[component.name] = { totalAluminium, bauxiteYield };
+                }
+
+                component.InputParameters.RawMaterials.forEach((item, itemIndex) => createSlider(`${item.name} (${component.name})`, item.amount, item.unit, { compIndex, type: 'RawMaterials', itemIndex, prop: 'amount', name: item.name, componentName: component.name }));
+                component.InputParameters.ProcessEnergy.forEach((item, itemIndex) => createSlider(`${item.process} (${component.name})`, item.amount, item.unit, { compIndex, type: 'ProcessEnergy', itemIndex, prop: 'amount', name: item.process, componentName: component.name }));
+                component.InputParameters.Transport.forEach((item, itemIndex) => createSlider(`${item.mode} Distance (${component.name})`, item.distance, item.unit, { compIndex, type: 'Transport', itemIndex, prop: 'distance', name: item.mode, componentName: component.name }));
+            });
+
+            adjustmentControlsContainer.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.addEventListener('input', handleParameterChange);
+            });
+        }
+
+        function createSlider(label, value, unit, data) {
+             const adjustmentControlsContainer = document.getElementById('adjustment-controls');
+            const initialValue = parseFloat(value);
+            const max = Math.max(initialValue * 2, 1);
+            const container = document.createElement('div');
+            container.className = 'bg-white p-4 rounded-lg border';
+            
+            const labelEl = document.createElement('label');
+            labelEl.className = 'block text-sm font-medium text-gray-700 mb-2';
+            labelEl.textContent = label;
+            
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'text-blue-600 font-mono';
+            valueSpan.textContent = ` ${initialValue.toFixed(2)} ${unit}`;
+            labelEl.appendChild(valueSpan);
+
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.className = 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer';
+            slider.min = 0;
+            slider.max = max;
+            slider.step = max / 100;
+            slider.value = initialValue;
+
+            for (const key in data) { slider.dataset[key] = data[key]; }
+
+            container.appendChild(labelEl);
+            container.appendChild(slider);
+            adjustmentControlsContainer.appendChild(container);
+        }
+
+        function handleParameterChange(event) {
+            const slider = event.target;
+            const { compIndex, type, itemIndex, prop, name, componentName } = slider.dataset;
+            const newValue = parseFloat(slider.value);
+
+            const label = slider.previousElementSibling;
+            const unit = label.textContent.split(' ').pop();
+            label.querySelector('span').textContent = ` ${newValue.toFixed(2)} ${unit}`;
+            
+            const totals = componentTotals[componentName];
+            if (totals) {
+                if (name === 'Bauxite') {
+                    const newAlFromBauxite = newValue * totals.bauxiteYield;
+                    let newScrapAmount = Math.max(0, totals.totalAluminium - newAlFromBauxite);
+                    const scrapSlider = document.querySelector(`input[data-component-name="${componentName}"][data-name="Scrap Aluminium"]`);
+                    if(scrapSlider) {
+                        currentInputDataForApi[compIndex].InputParameters.RawMaterials[scrapSlider.dataset.itemIndex].amount = newScrapAmount;
+                         scrapSlider.value = newScrapAmount;
+                         scrapSlider.previousElementSibling.querySelector('span').textContent = ` ${newScrapAmount.toFixed(2)} kg`;
+                    }
+                } else if (name === 'Scrap Aluminium') {
+                    let newAlFromBauxite = Math.max(0, totals.totalAluminium - newValue);
+                    let newBauxiteAmount = newAlFromBauxite / totals.bauxiteYield;
+                    const bauxiteSlider = document.querySelector(`input[data-component-name="${componentName}"][data-name="Bauxite"]`);
+                    if(bauxiteSlider) {
+                        currentInputDataForApi[compIndex].InputParameters.RawMaterials[bauxiteSlider.dataset.itemIndex].amount = newBauxiteAmount;
+                        bauxiteSlider.value = newBauxiteAmount;
+                        bauxiteSlider.previousElementSibling.querySelector('span').textContent = ` ${newBauxiteAmount.toFixed(2)} kg`;
+                    }
+                }
+            }
+            
+            if (type === 'ProcessEnergy') {
+                 currentInputDataForApi[compIndex].InputParameters[type][itemIndex]['amount'] = newValue;
+            } else {
+                 currentInputDataForApi[compIndex].InputParameters[type][itemIndex][prop] = newValue;
+            }
+
+            debouncedRecalculate();
+        }
+
+        function renderBreakdownChart(categoryData, breakdownData) {
+            const chartTitleElement = document.getElementById('chart-title');
+            chartTitleElement.textContent = `Breakdown for ${categoryData.category} | ${document.getElementById('partSelector').value}`;
+            const topN = 15;
+            const breakdown = breakdownData.slice(0, topN);
+            const labels = breakdown.map(item => item.source);
+            const data = breakdown.map(item => item.score);
+            const dataTypes = breakdown.map(item => item.type);
+            
+            const colorMap = {'Raw Material': 'rgba(59, 130, 246, 0.7)','Process Energy': 'rgba(239, 68, 68, 0.7)','Transport': 'rgba(249, 115, 22, 0.7)','Direct Emission': 'rgba(16, 185, 129, 0.7)'};
+            const backgroundColors = dataTypes.map(type => colorMap[type] || 'rgba(107, 114, 128, 0.7)');
+
+            if (breakdownChartInstance) breakdownChartInstance.destroy();
+
+            const ctx = document.getElementById('breakdownChart').getContext('2d');
+            breakdownChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: `Impact Score (${categoryData.unit})`, data: data, backgroundColor: backgroundColors, borderWidth: 1, borderColor: '#e5e7eb' }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { footer: (tooltipItems) => `Type: ${dataTypes[tooltipItems[0].dataIndex]}` }}},
+                    scales: {
+                        x: { beginAtZero: true, ticks: { color: '#4b5563', font: { size: 10 } }, grid: { color: '#e5e7eb' }, title: { display: true, text: `Impact Score (${categoryData.unit})`, color: '#374151'}},
+                        y: { ticks: { color: '#4b5563' }, grid: { color: '#e5e7eb' } }
+                    },
+                }
+            });
+        }
+        
+        function populateTables(breakdownData) {
+             const summaryTableBody = document.getElementById('summaryTableBody');
+             const contributionTableBody = document.getElementById('contributionTableBody');
+             const detailedTableBody = document.getElementById('detailedTableBody');
+
+            summaryTableBody.innerHTML = '';
+            currentApiResult.impact_assessment.forEach(item => {
+                const row = `
+                    <tr class="border-b border-gray-200">
+                        <td class="px-4 py-3 font-medium text-gray-900">${item.category}</td>
+                        <td class="px-4 py-3">${item.total_score.toFixed(4)}</td>
+                        <td class="px-4 py-3">${item.unit}</td>
+                    </tr>`;
+                summaryTableBody.innerHTML += row;
+            });
+            
+            const contributions = {};
+            let totalImpact = 0;
+            breakdownData.forEach(item => {
+                if (!contributions[item.type]) contributions[item.type] = 0;
+                contributions[item.type] += item.score;
+                totalImpact += item.score;
+            });
+
+            contributionTableBody.innerHTML = '';
+             if (totalImpact > 0) {
+                for(const type in contributions) {
+                    const percentage = (contributions[type] / totalImpact * 100).toFixed(2);
+                    const row = `<tr class="border-b border-gray-200">
+                        <td class="px-4 py-3 font-medium text-gray-900">${type}</td>
+                        <td class="px-4 py-3">${contributions[type].toFixed(4)}</td>
+                        <td class="px-4 py-3">${percentage}%</td></tr>`;
+                    contributionTableBody.innerHTML += row;
+                }
+            }
+            
+            detailedTableBody.innerHTML = '';
+            breakdownData.forEach(item => {
+                const row = `<tr class="border-b border-gray-200">
+                    <td class="px-4 py-3 font-medium text-gray-900">${item.source}</td>
+                    <td class="px-4 py-3">${item.type}</td>
+                    <td class="px-4 py-3">${item.score.toFixed(4)}</td></tr>`;
+                detailedTableBody.innerHTML += row;
+            });
+        }
+
+        function downloadFile(filename, content, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // --- Event Listeners ---
+        function setupEventListeners() {
+            const categorySelector = document.getElementById('categorySelector');
+            const partSelector = document.getElementById('partSelector');
+            const exportJsonBtn = document.getElementById('exportJsonBtn');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+            categorySelector.addEventListener('change', updateVisuals);
+            partSelector.addEventListener('change', updateVisuals); 
+
+            exportJsonBtn.addEventListener('click', () => {
+                if (currentApiResult) {
+                    downloadFile('lca_results.json', JSON.stringify(currentApiResult, null, 2), 'application/json');
+                } else {
+                    showCustomMessage('No data available to export. Please run an analysis first.', 'error');
+                }
+            });
+
+            exportCsvBtn.addEventListener('click', () => {
+                 if (!currentApiResult) {
+                    showCustomMessage('No data available to export. Please run an analysis first.', 'error');
+                    return;
+                }
+                const selectedCategoryName = categorySelector.value;
+                const selectedPartName = partSelector.value;
+                const categoryData = currentApiResult.impact_assessment.find(c => c.category === selectedCategoryName);
+                if (!categoryData) return;
+
+                let breakdownData = categoryData.breakdown;
+                if (selectedPartName !== 'All Parts') {
+                     breakdownData = breakdownData.filter(item => item.source.includes(`(${selectedPartName})`));
+                }
+
+                let csvContent = '"Source","Type","Impact Score","Unit"\n';
+                breakdownData.forEach(item => {
+                    csvContent += `"${item.source.replace(/"/g, '""')}","${item.type}","${item.score}","${categoryData.unit}"\n`;
+                });
+                
+                downloadFile(`lca_export_${selectedCategoryName.replace(/\s+/g, '_')}_${selectedPartName.replace(/\s+/g, '_')}.csv`, csvContent, 'text/csv;charset=utf-8;');
+            });
+        }
+        
+        // --- CHATBOT LOGIC (SIMULATED) ---
+        function appendMessage(sender, message, historyElement) {
+            const msgDiv = document.createElement('div');
+            
+            const formattedMessage = formatMarkdownToHTML(message);
+
+            if (sender === 'user') {
+                msgDiv.className = 'flex justify-end';
+                msgDiv.innerHTML = `<span class="bg-blue-600 text-white p-2 rounded-lg rounded-br-none max-w-xs break-words">${formattedMessage}</span>`;
+            } else {
+                msgDiv.className = 'flex justify-start';
+                msgDiv.innerHTML = `<span class="bg-blue-200 text-blue-800 p-2 rounded-lg rounded-tl-none max-w-xs break-words">${formattedMessage}</span>`;
+            }
+            historyElement.appendChild(msgDiv);
+            historyElement.scrollTop = historyElement.scrollHeight;
+        }
+
+        async function handleChatQuery(buttonId) {
+             showCustomMessage("Chat is disabled in this simulation.", "info");
+        }
+
+        async function handleReportChatQuery() {
+             showCustomMessage("Chat is disabled in this simulation.", "info");
+        }
+        
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => { 
+            toggleLCIForm(); 
+            setupEventListeners();
+            setupCircularEconomyDiagram();
+            
+            function updateLandfillPercentage() {
+                const recycling = parseFloat(document.getElementById('eol-recycling').value) || 0;
+                const reuse = parseFloat(document.getElementById('eol-reuse').value) || 0;
+                const landfillField = document.getElementById('eol-landfill');
+                
+                const landfill = Math.max(0, 100 - recycling - reuse);
+                landfillField.value = landfill.toFixed(0);
+                
+                const total = recycling + reuse;
+                const eolContainer = landfillField.closest('.p-4');
+                
+                if (total > 100) eolContainer.style.outline = '2px solid #ef4444';
+                else eolContainer.style.outline = '';
+            }
+            
+            const recyclingInput = document.getElementById('eol-recycling');
+            const reuseInput = document.getElementById('eol-reuse');
+            
+            if (recyclingInput && reuseInput) {
+                recyclingInput.addEventListener('input', updateLandfillPercentage);
+                reuseInput.addEventListener('input', updateLandfillPercentage);
+            }
+        });
+        
+        function debounce(func, delay) {
+             let timeout;
+             return function(...args) {
+                 clearTimeout(timeout);
+                 timeout = setTimeout(() => func.apply(this, args), delay);
+             };
+        }
+
+        // --- CIRCULAR ECONOMY DIAGRAM FUNCTIONALITY ---
+        function setupCircularEconomyDiagram() {
+            // DOM Element Cache for Circular Economy
+            const ceUI = {
+                sliders: {
+                    recycling: document.getElementById('ce-recycling'),
+                    reuse: document.getElementById('ce-reuse'),
+                    landfill: document.getElementById('ce-landfill'),
+                },
+                values: {
+                    recycling: document.getElementById('ce-recycling-value'),
+                    reuse: document.getElementById('ce-reuse-value'),
+                    landfill: document.getElementById('ce-landfill-value'),
+                },
+                arrows: {
+                    recycling: document.getElementById('recycle-arrow'),
+                    reuse: document.getElementById('reuse-arrow'),
+                    landfill: document.getElementById('landfill-arrow'),
+                },
+                warning: document.getElementById('ce-warning'),
+            };
+
+            let ceWarningTimeout;
+
+            function updateCEDiagram() {
+                const recyclePercent = parseInt(ceUI.sliders.recycling.value);
+                const reusePercent = parseInt(ceUI.sliders.reuse.value);
+                const landfillPercent = parseInt(ceUI.sliders.landfill.value);
+                
+                ceUI.values.recycling.textContent = `${recyclePercent}%`;
+                ceUI.values.reuse.textContent = `${reusePercent}%`;
+                ceUI.values.landfill.textContent = `${landfillPercent}%`;
+                
+                const maxStrokeWidth = 15;
+                const minStrokeWidth = 0.5;
+
+                const setArrowStyle = (arrow, percent) => {
+                    if (arrow) {
+                        arrow.style.strokeWidth = Math.max(minStrokeWidth, (percent / 100) * maxStrokeWidth);
+                        arrow.style.opacity = percent > 0 ? 1 : 0;
+                    }
+                };
+
+                setArrowStyle(ceUI.arrows.recycling, recyclePercent);
+                setArrowStyle(ceUI.arrows.reuse, reusePercent);
+                setArrowStyle(ceUI.arrows.landfill, landfillPercent);
+            }
+
+            function handleCEInputChange(changedSliderId) {
+                const sliders = ceUI.sliders;
+                const values = {
+                    recycling: parseInt(sliders.recycling.value),
+                    reuse: parseInt(sliders.reuse.value),
+                    landfill: parseInt(sliders.landfill.value),
+                };
+
+                const total = values.recycling + values.reuse + values.landfill;
+                if (total === 100) {
+                    ceUI.warning.textContent = '';
+                    updateCEDiagram();
+                    return;
+                }
+
+                ceUI.warning.textContent = 'Adjusting other values to sum to 100%';
+                if (ceWarningTimeout) clearTimeout(ceWarningTimeout);
+                ceWarningTimeout = setTimeout(() => { ceUI.warning.textContent = ''; }, 2000);
+
+                const changedValue = values[changedSliderId];
+                const remainder = 100 - changedValue;
+
+                const otherIds = Object.keys(values).filter(id => id !== changedSliderId);
+                const otherTotal = values[otherIds[0]] + values[otherIds[1]];
+
+                let newOther1, newOther2;
+
+                if (otherTotal === 0) {
+                    newOther1 = Math.floor(remainder / 2);
+                    newOther2 = Math.ceil(remainder / 2);
+                } else {
+                    const ratio1 = values[otherIds[0]] / otherTotal;
+                    newOther1 = Math.round(remainder * ratio1);
+                    newOther2 = remainder - newOther1; 
+                }
+
+                sliders[otherIds[0]].value = newOther1;
+                sliders[otherIds[1]].value = newOther2;
+
+                updateCEDiagram();
+            }
+
+            // Add event listeners for CE sliders
+            for (const sliderId in ceUI.sliders) {
+                if (ceUI.sliders[sliderId]) {
+                    ceUI.sliders[sliderId].addEventListener('input', () => handleCEInputChange(sliderId));
+                }
+            }
+
+            // Initialize CE diagram
+            updateCEDiagram();
+        }
+
+        async function generateReport() {
+            const reportOutput = document.getElementById('reportOutput');
+            const recommendationLoader = document.getElementById('recommendation-loader');
+            const reportChatbot = document.getElementById('report-chatbot-container');
+
+            reportChatbot.classList.add('hidden');
+
+            if (!currentApiResult) { 
+                reportOutput.textContent = "Cannot generate a report without analysis results. Please run an analysis first."; 
+                return; 
+            }
+            
+            let impactSummary = '-----------------------------------------------------\n                     IMPACT ASSESSMENT SUMMARY\n-----------------------------------------------------\n\n';
+            currentApiResult.impact_assessment.forEach(cat => {
+                 impactSummary += `  - ${cat.category}: ${cat.total_score.toFixed(2)} ${cat.unit}\n`;
+            });
+            
+            const baseReportText = `
+=====================================================
+            LIFE CYCLE ASSESSMENT SUMMARY REPORT
+=====================================================
+Project Name: ${projectData.details.projectName || 'Untitled Project'}
+Project Goal: ${projectData.details.projectGoal || 'Not specified'}
+Date: ${new Date().toLocaleDateString()}
+
+${impactSummary}
+`;
+            reportOutput.textContent = baseReportText;
+            
+            recommendationLoader.classList.remove('hidden');
+            let recommendations = '';
+            try {
+                // SIMULATED API CALL for recommendations
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+                
+                // MOCK API 3 RESPONSE
+                const recommendationText = `Here are the recommendations in a more condensed format.
+
+1. Decarbonize Process Energy ☀️
+Switch the electrolytic reduction (smelting) process to renewable energy via a Power Purchase Agreement (PPA).
+ This directly mitigates your primary Scope 2 emissions hotspot, cutting the product's total Global Warming 
+Potential by ~8%.
+
+2. Optimize Material Feedstock ♻️
+Implement a circular material flow by specifying the handle be made from 100% secondary (recycled) aluminum. 
+This move eliminates the impacts of virgin bauxite for that part, reducing total Mineral Resource Scarcity by 50% 
+and Particulate Matter by over 26%.
+
+3. Install Emission Abatement Systems 💨
+Retrofit your facility with Best Available Technology (BAT) like scrubbers to control fugitive heavy metal emissions.
+ This targets the source of 100% of the Human Carcinogenic Toxicity impact, and a 90% efficient system would cut that 
+score by 90%.
+
+---
+Note: This is a simulated response. For real results, please download and run the full project from GitHub.`;
+
+                recommendations = `
+-----------------------------------------------------
+            AI-POWERED RECOMMENDATIONS
+-----------------------------------------------------
+
+${recommendationText}
+`;
+            } catch (error) {
+                console.error("Failed to fetch recommendations:", error);
+                recommendations = `
+-----------------------------------------------------
+            AI-POWERED RECOMMENDATIONS
+-----------------------------------------------------
+
+Error: Could not fetch recommendations from the server. This is a simulation.
+`;
+            } finally {
+                reportOutput.textContent += recommendations;
+                recommendationLoader.classList.add('hidden');
+                reportChatbot.classList.remove('hidden');
+            }
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaMinds | AI-LCA Platform</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /*
+          This custom CSS is for animations and specific visual effects
+          that are easier to manage here than with inline Tailwind classes.
+        */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrolling for a splash screen effect */
+            background-color: #111827; /* bg-gray-900 */
+        }
+
+        /* Using the Inter font family for consistent typography */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /*
+          This creates a subtle dotted grid pattern that appears to radiate from the center,
+          enhancing the dark theme without being distracting.
+        */
+        .dotted-gradient-bg {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 0);
+            background-size: 30px 30px;
+        }
+
+        /*
+          This CSS filter is a creative trick to make the white background of an image
+          appear transparent. It's not perfect but works well for high-contrast JPEGs.
+          It increases brightness and contrast to blow out the whites, making them blend
+          with the background.
+        */
+        .remove-bg {
+            /* This is a visual effect and may not work on all images perfectly. */
+            /* It's best used with images that have a clear, solid white background. */
+            filter: brightness(1.1) contrast(1.1);
+        }
+
+        /*
+          This filter inverts the color of the dark cityscape SVG to a light gray,
+          making it visible and aesthetically pleasing on the dark background.
+        */
+        .invert-svg-color {
+            filter: invert(90%) sepia(8%) saturate(99%) hue-rotate(185deg) brightness(88%) contrast(91%);
+        }
+
+        /*
+          Keyframe Animations
+        */
+        @keyframes slide-in-left {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slide-in-right {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* New animation for the central text to fade in and scale up */
+        @keyframes fade-in-scale-up {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
+        @keyframes modal-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes modal-grow {
+            from { transform: scale(0.95); }
+            to { transform: scale(1); }
+        }
+
+        /*
+          Animation Utility Classes
+        */
+        .animate-slide-in-left {
+            animation: slide-in-left 1s ease-out forwards;
+        }
+        
+        .animate-slide-in-right {
+            animation: slide-in-right 1s ease-out forwards;
+        }
+        
+        .animate-fade-in-scale-up {
+            animation: fade-in-scale-up 1.2s ease-out forwards;
+            animation-delay: 0.4s; /* Stagger animation start */
+        }
+
+        .modal-enter {
+            animation: modal-fade-in 0.3s ease-out forwards;
+        }
+        .modal-enter .modal-content {
+            animation: modal-grow 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <!-- Main container for the entire page -->
+    <div class="relative w-full h-screen flex flex-col overflow-hidden dotted-gradient-bg">
+        
+        <!-- Header Section -->
+        <header class="w-full bg-gray-900/80 backdrop-blur-sm shadow-lg z-30 border-b border-gray-700/50">
+            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="Resource/jnarddc.jpg" alt="JNARDDC Logo" class="h-12 w-12 rounded-full">
+                    <div>
+                        <h1 class="font-bold text-lg text-blue-400">Jawaharlal Nehru Aluminium</h1>
+                        <p class="text-sm text-gray-400">Research Development & Design Centre</p>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="text-gray-300 hover:text-blue-400 transition-colors">Home</a>
+                    <button id="about-link" class="text-gray-300 hover:text-blue-400 transition-colors">About the Initiative</button>
+                    <button id="contact-link" class="text-gray-300 hover:text-blue-400 transition-colors">Contact</button>
+                    <button id="demo-video-link" class="text-gray-300 hover:text-blue-400 transition-colors">Demo Video</button>
+                    <a href="https://github.com/Vivekkumar0045/SIH-2025" target="_blank" class="text-gray-300 hover:text-blue-400 transition-colors">GitHub Project</a>
+                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-300 shadow-md">LCA Calculator</button>
+                </div>
+                <div class="md:hidden">
+                    <button class="text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content Section -->
+        <main class="flex-grow relative">
+            
+            <!-- Left Column: Modi (Absolutely Positioned) -->
+            <div class="absolute left-0 bottom-0 h-full w-2/5 flex items-end justify-center animate-slide-in-left z-10">
+                <img 
+                    src="Resource/modi.png" 
+                    alt="Shri Narendra Modi" 
+                    class="max-h-full w-auto object-contain"
+                    onerror="this.onerror=null;this.src='Resource/modi.png';"
+                >
+                <div class="absolute bottom-5 w-11/12 max-w-sm bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-md text-center py-3 px-2 border border-gray-700">
+                    <span class="block font-semibold text-lg text-gray-100">Shri Narendra Modi</span>
+                    <span class="block text-sm text-gray-400">Prime Minister of India</span>
+                </div>
+            </div>
+            
+            <!-- Center Column: Text Content (Absolutely Positioned) -->
+            <div class="absolute top-1/2 left-1/2 w-full max-w-4xl text-center z-20 animate-fade-in-scale-up px-4" style="transform: translate(-50%, -50%);">
+                <h2 class="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-100 leading-tight shadow-black [text-shadow:_0_2px_4px_var(--tw-shadow-color)]">
+                    Revolutionizing <span class="text-green-400">Sustainability</span> in Indian Industries
+                </h2>
+                <p class="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-gray-300">
+                    An AI-Powered Life Cycle Assessment (LCA) Platform for the Mining and Aluminium sectors.
+                </p>
+                    <a href="lca.html" class="mt-10 inline-block bg-green-600 text-white text-lg font-semibold px-10 py-4 rounded-lg shadow-lg hover:bg-green-700 transform hover:-translate-y-1 transition-all duration-300">
+                        Proceed to LCA Calculation
+                    </a>
+            </div>
+            
+            <!-- Right Column: Ministers (Absolutely Positioned) -->
+            <div class="absolute right-0 bottom-0 h-full w-1/4 flex flex-col justify-center items-center gap-8 animate-slide-in-right z-10 p-4">
+                <!-- Minister 1 -->
+                <div class="flex-1 flex flex-col justify-end items-center max-w-xs w-full">
+                    <img 
+                        src="Resource/min1.png" 
+                        alt="Minister 1" 
+                        class="max-h-[30vh] w-full object-contain mb-1"
+                        onerror="this.onerror=null;this.src='https://placehold.co/400x350/FFE4E6/DC2626?text=Image+Not+Found';"
+                    >
+                    <div class="w-full bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-md text-center py-3 px-2 -mt-4 border border-gray-700">
+                        <span class="block font-semibold text-lg text-gray-100">Shri Pralhad Joshi</span>
+                        <span class="block text-sm text-gray-400">Minister of Mines</span>
+                    </div>
+                </div>
+                <!-- Minister 2 -->
+                <div class="flex-1 flex flex-col justify-start items-center max-w-xs w-full">
+                    <img 
+                        src="Resource/min2.png" 
+                        alt="Minister 2" 
+                        class="max-h-[30vh] w-full object-contain"
+                        onerror="this.onerror=null;this.src='https://placehold.co/400x350/E0E7FF/4F46E5?text=Image+Not+Found';"
+                    >
+                    <div class="w-full bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-md text-center py-3 px-2 -mt-4 border border-gray-700">
+                        <span class="block font-semibold text-lg text-gray-100">Shri Alok Tandon</span>
+                        <span class="block text-sm text-gray-400">Mines Secretary</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Cityscape Footer Image -->
+        <div class="w-full z-0 absolute bottom-0">
+             <img src="https://svgshare.com/i/18PE.svg" alt="Indian Cityscape Silhouette" class="w-full h-auto object-cover invert-svg-color opacity-30">
+        </div>
+
+        <!-- Footer Section -->
+        <footer class="bg-gray-900/80 backdrop-blur-sm text-white z-30 border-t border-gray-700/50 absolute bottom-0 w-full">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+                <div>
+                    <h2 class="font-bold text-lg text-blue-400">Jawaharlal Nehru Aluminium Research</h2>
+                    <p class="text-sm text-gray-400">Development and Design Centre</p>
+                </div>
+                 <div class="mt-2 md:mt-0 text-sm text-gray-400">
+                    <p>Developed by <span class="font-semibold text-green-400">Meta Minds</span> for <span class="font-semibold text-blue-400">SIH</span></p>
+                </div>
+                <div class="mt-2 md:mt-0 text-sm text-gray-400">
+                    <p>+91-9142981933 | vivekkumar533786@gmail.com</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- About the Initiative Modal -->
+    <div id="about-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex justify-center items-center z-50 p-4 modal-enter">
+        <div class="modal-content bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-8 relative">
+            <button id="close-about-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h2 class="text-3xl font-bold text-center mb-4 text-green-400">About the Initiative</h2>
+            <div class="text-gray-300 space-y-6">
+                <div>
+                    <h3 class="font-semibold text-xl text-blue-300 mb-2">Problem Statement (ID: ID25069)</h3>
+                    <p class="font-bold text-lg">AI-Driven Life Cycle Assessment (LCA) Tool for Advancing Circularity and Sustainability in Metallurgy and Mining</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-xl text-blue-300 mb-2">Background</h3>
+                    <p>As industries increasingly emphasize sustainability, Life Cycle Assessment (LCA) is emerging not just as a tool for measuring environmental impact, but as a key strategy for advancing circularity. Metals like aluminium and copper, vital to sectors from energy to infrastructure, undergo multiple stages — from extraction and processing to use and end-of-life. Traditional linear models often result in resource depletion and waste. Modern LCA frameworks now assess not only emissions and resource use, but also the potential for reuse, recycling, and closed-loop systems. By informing decisions on product design, manufacturing, and end-of-life recovery, LCA enables a shift toward a circular economy where materials are kept in use longer and waste is minimized.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-xl text-blue-300 mb-2">Problem Statement</h3>
+                    <p>There is a need to design an intuitive, AI-powered software platform that enables metallurgists, engineers, and decision-makers to perform automated LCAs for metals such as aluminium, copper, or critical minerals, with a special emphasis on circularity.</p>
+                </div>
+                 <div>
+                    <h3 class="font-semibold text-xl text-blue-300 mb-2">Proposed Solution</h3>
+                    <ul class="list-disc list-inside space-y-2 pl-4">
+                        <li>Allow users to input or select process and production details (including raw vs. recycled routes, energy use, transport, and end-of-life options).</li>
+                        <li>Use AI/ML models to estimate missing parameters and predict both environmental and circularity indicators (e.g., recycled content, resource efficiency, extended product life, potential for reuse).</li>
+                        <li>Visualize circular flow opportunities alongside environmental impacts across the full value chain — from raw material extraction through reuse or recycling.</li>
+                        <li>Enable easy comparison of conventional and circular processing pathways.</li>
+                        <li>Generate actionable reports and recommendations for reducing impacts and enhancing circularity, even when users have limited data or specialized expertise.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-xl text-blue-300 mb-2">Impact</h3>
+                    <p>With this tool, the metals sector will be empowered to make practical, data-driven choices that foster environmental sustainability while advancing circular, resource-efficient systems.</p>
+                </div>
+                 <div>
+                    <h3 class="font-semibold text-xl text-blue-300 mb-2">Organization Details</h3>
+                    <p><span class="font-semibold">Ministry:</span> Ministry of Mines</p>
+                    <p><span class="font-semibold">Department:</span> Jawaharlal Nehru Aluminium Research Development and Design Centre (JNARDDC)</p>
+                     <p><span class="font-semibold">Category:</span> Software</p>
+                      <p><span class="font-semibold">Theme:</span> Miscellaneous</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Contact Modal -->
+    <div id="contact-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex justify-center items-center z-50 p-4 modal-enter">
+        <div class="modal-content bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-8 relative">
+            <button id="close-contact-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h2 class="text-4xl font-bold text-center mb-2 text-green-400">Our Team</h2>
+            <p class="text-center text-gray-400 text-2xl mb-8 font-semibold">Meta Minds</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Team Leader -->
+                <div class="bg-gray-900/50 p-5 rounded-lg border-2 border-green-500 shadow-lg text-center transform hover:scale-105 transition-transform duration-300">
+                    <p class="text-xl font-bold text-white">Vivek Kumar Mahato</p>
+                    <p class="text-green-400 font-semibold mb-3">Team Leader</p>
+                    <div class="flex justify-center items-center space-x-4">
+                        <a href="mailto:vivekkumar533786@gmail.com" class="text-gray-400 hover:text-green-400 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg></a>
+                        <a href="https://github.com/Vivekkumar0045" target="_blank" class="text-gray-400 hover:text-green-400 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg></a>
+                    </div>
+                </div>
+                <!-- Other Members -->
+                <script>
+                    const members = [
+                        { name: "Sumit Tiwari", email: "sumittiwari1209@gmail.com", github: "https://github.com/Vivekkumar0045" },
+                        { name: "Prashant Sagar Rana", email: "p78497214@gmail.com", github: "https://github.com/Vivekkumar0045" },
+                        { name: "Attada Sandeep", email: "attadasandeep2005@gmail.com", github: "https://github.com/Vivekkumar0045" },
+                        { name: "Kajal Verma", email: "kajalverma6263@gmail.com", github: "https://github.com/Vivekkumar0045" },
+                        { name: "Ananya Singh", email: "ananyasingh.hhm@gmail.com", github: "https://github.com/Vivekkumar0045" },
+                    ];
+                    members.forEach(member => {
+                        document.write(`
+                            <div class="bg-gray-900/50 p-5 rounded-lg border border-gray-700 text-center transform hover:scale-105 transition-transform duration-300">
+                                <p class="text-xl font-bold text-white">${member.name}</p>
+                                <p class="text-blue-400 font-semibold mb-3">Team Member</p>
+                                <div class="flex justify-center items-center space-x-4">
+                                     <a href="mailto:${member.email}" class="text-gray-400 hover:text-blue-400 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg></a>
+                                    <a href="${member.github}" target="_blank" class="text-gray-400 hover:text-blue-400 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg></a>
+                                </div>
+                            </div>
+                        `);
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="video-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex justify-center items-center z-50 p-4 modal-enter">
+        <div class="modal-content bg-gray-900 border border-gray-700 rounded-lg shadow-2xl w-full max-w-4xl relative" style="padding-top: 56.25%;"> <!-- 16:9 Aspect Ratio -->
+            <button id="close-video-modal" class="absolute -top-4 -right-4 bg-white text-gray-800 rounded-full h-10 w-10 flex items-center justify-center z-10 shadow-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <!-- 
+                IMPORTANT: Replace the 'src' attribute below with your video's EMBED link.
+                For Google Drive: Get a shareable link, open it, then in the top-right corner (three dots), 
+                select "Embed item" and copy the src from the iframe code.
+                For YouTube: Click "Share" under the video, then "Embed", and copy the src.
+            -->
+            <iframe id="video-iframe" class="absolute top-0 left-0 w-full h-full" src="Resource/demosih.mp4" title="Demo Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get modal elements
+            const aboutModal = document.getElementById('about-modal');
+            const contactModal = document.getElementById('contact-modal');
+            const videoModal = document.getElementById('video-modal');
+
+            // Get open/close buttons
+            const aboutLink = document.getElementById('about-link');
+            const closeAboutModal = document.getElementById('close-about-modal');
+            const contactLink = document.getElementById('contact-link');
+            const closeContactModal = document.getElementById('close-contact-modal');
+            const demoVideoLink = document.getElementById('demo-video-link');
+            const closeVideoModal = document.getElementById('close-video-modal');
+            
+            const videoIframe = document.getElementById('video-iframe');
+            // !! IMPORTANT: Set your video link here !!
+            const videoSrc = "Resource/demosih.mp4"; // Example: YouTube embed link
+
+            // --- About Modal Logic ---
+            aboutLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                aboutModal.classList.remove('hidden');
+            });
+             closeAboutModal.addEventListener('click', () => {
+                aboutModal.classList.add('hidden');
+            });
+            aboutModal.addEventListener('click', (e) => {
+                if (e.target === aboutModal) {
+                    aboutModal.classList.add('hidden');
+                }
+            });
+
+            // --- Contact Modal Logic ---
+            contactLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                contactModal.classList.remove('hidden');
+            });
+
+            closeContactModal.addEventListener('click', () => {
+                contactModal.classList.add('hidden');
+            });
+            
+            contactModal.addEventListener('click', (e) => {
+                if (e.target === contactModal) {
+                    contactModal.classList.add('hidden');
+                }
+            });
+
+            // --- Video Modal Logic ---
+            function openVideo() {
+                 if(videoIframe.src !== videoSrc) {
+                    videoIframe.src = videoSrc;
+                }
+                videoModal.classList.remove('hidden');
+            }
+            
+            demoVideoLink.addEventListener('click', openVideo);
+
+            function closeVideo() {
+                videoModal.classList.add('hidden');
+                videoIframe.src = ""; 
+            }
+
+            closeVideoModal.addEventListener('click', closeVideo);
+
+            videoModal.addEventListener('click', (e) => {
+                 if (e.target === videoModal) {
+                    closeVideo();
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
+
